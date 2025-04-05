@@ -1,12 +1,14 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./node_modules/expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "jsx": "react-native",
     "paths": {
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "types": ["react-native-dotenv"]
   },
   "include": [
     "**/*.ts",
