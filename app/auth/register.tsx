@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from "expo-router";
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-const API_URL = process.env.API_URL;
+// const API_URL = process.env.API_URL;
 
 
     
@@ -54,7 +54,7 @@ export default function Register() {
         }
 
         try {
-            const response = await fetch(`${API_URL}/api/v1/register`, {
+            const response = await fetch(`http://192.168.254.118:3000/api/v1/register`, {
                 method: "POST",
                 body: formData,
                 headers: {
