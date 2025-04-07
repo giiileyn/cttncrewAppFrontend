@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from "react-native";
+// import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const API_URL = process.env.API_URL;
 
 
@@ -14,29 +16,38 @@ export default function Login() {
       Alert.alert("Error", "Please enter email and password");
       return;
     }
-
+  
     try {
-      const response = await fetch(`http://192.168.254.118:3000/api/v1/login`, { 
+      const response = await fetch(`http://192.168.254.118:3000/api/v1/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
-
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
-
-      
+  
+      const { _id, role } = data.user;
+  
+      // ✅ Save user info to AsyncStorage
+      await AsyncStorage.setItem("userId", _id);
+      await AsyncStorage.setItem("userRole", role);
+  
       console.log("Login Success:", data);
       Alert.alert("Success", "Login successful!");
-      
-      
-      router.push("/(tabs)/home");
+  
+      // ✅ Role-based redirect
+      if (role === "admin") {
+        router.push("/page/admin"); // or `router.replace("/page/admin")` if you want to remove login from back stack
+      } else {
+        router.push("/(tabs)/home");
+      }
+  
     } catch (error) {
       if (error instanceof Error) {
         console.error("Login Error:", error.message);

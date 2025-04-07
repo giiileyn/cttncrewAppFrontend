@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 
+
 const Cart = () => {
   const [cart, setCart] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<number[]>([]);
@@ -64,42 +65,67 @@ const Cart = () => {
       setShowShippingForm(true);
       return;
     }
-
+  
     const selectedItems = cart
-      .map((item, index) => checkedItems[index] ? { ...item, quantity: quantities[index] } : null)
+      .map((item, index) =>
+        checkedItems[index]
+          ? {
+              product: item._id, // ✅ this is the correct key expected by backend
+              quantity: quantities[index],
+              price: item.price,
+            }
+          : null
+      )
       .filter(item => item !== null);
-
+      console.log("Cart items:", cart);
+  
     if (selectedItems.length === 0) {
       Alert.alert('Error', 'Please select at least one item.');
       return;
     }
-
-    if (!shippingInfo.address || !shippingInfo.city || !shippingInfo.postalCode || !shippingInfo.phoneNo) {
+  
+    if (
+      !shippingInfo.address ||
+      !shippingInfo.city ||
+      !shippingInfo.postalCode ||
+      !shippingInfo.phoneNo
+    ) {
       Alert.alert('Missing Info', 'Please complete all shipping fields.');
       return;
     }
-
+  
     const itemsPrice = totalAmount;
     const totalPrice = itemsPrice;
-
+  
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userId = await AsyncStorage.getItem('userId');
+      console.log("userId:", userId);
+
+      if (!userId) {
+        Alert.alert('Error', 'You must be logged in to complete the checkout.');
+        return;
+      }
+  
+      const payload = {
+        userId,
+        orderItems: selectedItems,
+        shippingInfo,
+        itemsPrice,
+        totalPrice,
+      };
+      console.log("Payload being sent:", payload);
 
       const response = await axios.post(
         'http://192.168.254.118:3000/api/v1/order/new',
         {
+          userId,
           orderItems: selectedItems,
           shippingInfo,
           itemsPrice,
           totalPrice,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
         }
-      );
-
+      ); console.log("Response:", response.data);
+  
       if (response.data.success) {
         Alert.alert('Success', 'Order placed successfully!');
         setCart([]);
@@ -113,7 +139,8 @@ const Cart = () => {
       Alert.alert('Error', 'Something went wrong.');
     }
   };
-
+  
+  
   return (
     <View style={styles.container}>
       {/* Header */}
