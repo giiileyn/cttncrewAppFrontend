@@ -4,11 +4,10 @@ import Navbottombar from "@/components/navigator/Navbottombar";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://192.168.254.118:3000/api/v1/products";
+const API_URL = "http://192.168.43.108:3000/api/v1/products";
 
 const CATEGORIES = ['Men', 'Women', 'Kids', 'Oversized', 'Graphic']; 
 
-// TypeScript interface for Product
 interface Product {
   _id: string;
   name: string;
@@ -21,6 +20,10 @@ const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [minPrice, setMinPrice] = useState<number | string>(""); 
+  const [maxPrice, setMaxPrice] = useState<number | string>(""); 
   const router = useRouter();
 
   useEffect(() => {
@@ -45,7 +48,33 @@ const Home = () => {
     }
   };
 
-  // ✅ Save product ID before navigation
+  // Filter products based on search, category, and price
+  const filterProductsByPrice = (products: Product[], min: number | string, max: number | string) => {
+    return products.filter(product => {
+      const price = product.price;
+
+      if (min && max) {
+        return price >= Number(min) && price <= Number(max);
+      } else if (min) {
+        return price >= Number(min);
+      } else if (max) {
+        return price <= Number(max);
+      }
+
+      return true;
+    });
+  };
+
+  const filteredProducts = filterProductsByPrice(
+    products.filter(product => {
+      const matchesSearchQuery = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory ? product.category.toLowerCase() === selectedCategory.toLowerCase() : true;
+      return matchesSearchQuery && matchesCategory;
+    }),
+    minPrice,
+    maxPrice
+  );
+
   const handleProductPress = async (productId: string) => {
     await AsyncStorage.setItem("selectedProductId", productId);
     router.push("/page/singleProd");
@@ -54,7 +83,13 @@ const Home = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TextInput style={styles.searchBar} placeholder="Search products..." placeholderTextColor="#555" />
+        <TextInput 
+          style={styles.searchBar} 
+          placeholder="Search products..." 
+          placeholderTextColor="#555" 
+          value={searchQuery}
+          onChangeText={setSearchQuery}  
+        />
         <View style={styles.headerIcons}>
           <TouchableOpacity>
             <Image source={require("@/assets/icons/cart.png")} style={styles.icon} />
@@ -67,6 +102,23 @@ const Home = () => {
 
       <Image source={require("@/assets/illustrations/banner.png")} style={styles.bannerImage} />
 
+      <View style={styles.priceFilterContainer}>
+        <TextInput
+          style={styles.priceInput}
+          placeholder="Min Price"
+          keyboardType="numeric"
+          value={minPrice.toString()}
+          onChangeText={(text) => setMinPrice(Number(text))}
+        />
+        <TextInput
+          style={styles.priceInput}
+          placeholder="Max Price"
+          keyboardType="numeric"
+          value={maxPrice.toString()}
+          onChangeText={(text) => setMaxPrice(Number(text))}
+        />
+      </View>
+
       <ScrollView style={styles.productContainer}>
         {loading ? (
           <ActivityIndicator size="large" color="#FFC43D" />
@@ -74,16 +126,30 @@ const Home = () => {
           <Text style={styles.errorText}>{error}</Text>
         ) : (
           <>
-            {products.length > 0 && renderProductSection("All Products", products, handleProductPress)}
+            <View style={styles.categoryFilter}>
+              {CATEGORIES.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[styles.categoryButton, selectedCategory === category && styles.selectedCategory]}
+                  onPress={() => setSelectedCategory(category === selectedCategory ? null : category)}
+                >
+                  <Text style={styles.categoryText}>{category}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-            {CATEGORIES.map(category => {
-              const categoryProducts = products.filter(product => {
-                const trimmedCategory = (product.category || "").trim().toLowerCase();
-                return trimmedCategory === category.toLowerCase();
-              });
+            {filteredProducts.length > 0 ? (
+              <>
+                {renderProductSection("All Products", filteredProducts, handleProductPress)}
 
-              return categoryProducts.length > 0 ? renderProductSection(category, categoryProducts, handleProductPress) : null;
-            })}
+                {CATEGORIES.map(category => {
+                  const categoryProducts = filteredProducts.filter(product => product.category.toLowerCase() === category.toLowerCase());
+                  return categoryProducts.length > 0 ? renderProductSection(category, categoryProducts, handleProductPress) : null;
+                })}
+              </>
+            ) : (
+              <Text style={styles.noResults}>No products found</Text>
+            )}
           </>
         )}
       </ScrollView>
@@ -93,7 +159,6 @@ const Home = () => {
   );
 };
 
-// ✅ Updated `renderProductSection` to use `handleProductPress`
 const renderProductSection = (title: string, products: Product[], handleProductPress: (id: string) => void) => (
   <View style={styles.section} key={title}>
     <View style={styles.sectionHeader}>
@@ -131,6 +196,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginVertical: 10,
+  },
+  noResults: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#888',
+    marginTop: 20,
   },
   header: {
     backgroundColor: '#FFC43D',
@@ -204,6 +275,39 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 14,
     color: '#555',
+  },
+  categoryFilter: {
+    flexDirection: 'row',
+    marginVertical: 10,
+    flexWrap: 'wrap',
+  },
+  categoryButton: {
+    backgroundColor: '#f1f1f1',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    margin: 5,
+    borderRadius: 20,
+  },
+  selectedCategory: {
+    backgroundColor: '#FFC43D',
+  },
+  categoryText: {
+    fontSize: 14,
+  },
+  priceFilterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    margin: 15,
+  },
+  priceInput: {
+    width: '45%',
+    padding: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 4,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    fontSize: 14,
+    color: '#333',
   },
 });
 

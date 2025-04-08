@@ -8,7 +8,7 @@
         "./*"
       ]
     },
-    "types": ["react-native-dotenv"]
+    "types": ["react-native", "react", "react-native-dotenv"]
   },
   "include": [
     "**/*.ts",

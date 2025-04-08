@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from "react-native";
-// import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-const API_URL = process.env.API_URL;
-
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Login() {
   const router = useRouter();
@@ -16,67 +21,62 @@ export default function Login() {
       Alert.alert("Error", "Please enter email and password");
       return;
     }
-  
+
     try {
-      const response = await fetch(`http://192.168.254.118:3000/api/v1/login`, {
+      const response = await fetch("http://192.168.43.108:3000/api/v1/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-  
+
       const data = await response.json();
-  
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-  
-      const { _id, role } = data.user;
-  
-      // ✅ Save user info to AsyncStorage
-      await AsyncStorage.setItem("userId", _id);
-      await AsyncStorage.setItem("userRole", role);
-  
-      console.log("Login Success:", data);
-      Alert.alert("Success", "Login successful!");
-  
-      // ✅ Role-based redirect
-      if (role === "admin") {
-        router.push("/page/admin"); // or `router.replace("/page/admin")` if you want to remove login from back stack
+      console.log("Login Response:", data);
+
+      if (data.success) {
+        const { token, user } = data;
+
+        // ✅ Save token and user info in AsyncStorage
+        await AsyncStorage.setItem("token", token);
+        await AsyncStorage.setItem("userId", user._id);
+        await AsyncStorage.setItem("userRole", user.role);
+        console.log("Stored token:", token);
+        
+        // ✅ Role-based redirect
+        if (user.role === "admin") {
+          router.replace("/page/admin");
+        } else {
+          router.replace("/(tabs)/home");
+        }
       } else {
-        router.push("/(tabs)/home");
+        Alert.alert("Login Failed", data.message || "Invalid credentials");
       }
-  
     } catch (error) {
-      if (error instanceof Error) {
-        console.error("Login Error:", error.message);
-        Alert.alert("Error", error.message);
-      } else {
-        console.error("Login Error:", error);
-        Alert.alert("Error", "An unexpected error occurred");
-      }
+      console.error("Login Error:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Image source={require("../../assets/auth/login.png")} style={styles.illustration} />
-      
+      <Image
+        source={require("../../assets/auth/login.png")}
+        style={styles.illustration}
+      />
+
       <View style={styles.form}>
         <Text style={styles.label}>Email:</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="jdelacruz@gmail.com" 
+        <TextInput
+          style={styles.input}
+          placeholder="jdelacruz@gmail.com"
           placeholderTextColor="#BFA5A5"
           value={email}
           onChangeText={setEmail}
         />
 
         <Text style={styles.label}>Password</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="***********" 
+        <TextInput
+          style={styles.input}
+          placeholder="***********"
           placeholderTextColor="#BFA5A5"
           secureTextEntry
           value={password}
@@ -97,7 +97,6 @@ export default function Login() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {

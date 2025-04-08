@@ -54,7 +54,7 @@ export default function Register() {
         }
 
         try {
-            const response = await fetch(`http://192.168.254.118:3000/api/v1/register`, {
+            const response = await fetch(`http://192.168.43.108:3000/api/v1/register`, {
                 method: "POST",
                 body: formData,
                 headers: {

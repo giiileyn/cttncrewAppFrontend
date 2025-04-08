@@ -1,10 +1,12 @@
-import React, { useState, useCallback } from 'react';
+// import React, { , useCallback } from 'react';
 import {
   View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity, Alert
 } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+
 import axios from 'axios';
 
 
@@ -70,9 +72,9 @@ const Cart = () => {
       .map((item, index) =>
         checkedItems[index]
           ? {
-              product: item._id, // ✅ this is the correct key expected by backend
-              quantity: quantities[index],
-              price: item.price,
+            name: item.name, // <- changed from product: item._id
+            quantity: quantities[index],
+            price: item.price,
             }
           : null
       )
@@ -116,7 +118,7 @@ const Cart = () => {
       console.log("Payload being sent:", payload);
 
       const response = await axios.post(
-        'http://192.168.254.118:3000/api/v1/order/new',
+        'http://192.168.43.108:3000/api/v1/order/new',
         {
           userId,
           orderItems: selectedItems,

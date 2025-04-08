@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Animated, Dimensions } from "react-native";
-import Navbottombar from "@/components/navigator/Navbottombar";
-import { useRouter } from "expo-router";
+import { View, Text, Image, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
+// import Admin from "../page/adminSingleProd";
+import AdminSingleProd from "./adminSingleProd";
+import UserList from "../page/userList"; // Import UserList from the correct path
+import CreateProduct from "../page/createProduct";
+import OrderInfo from "../page/orderInfo";
 
 const { width } = Dimensions.get("window");
-const API_URL = "http://192.168.254.118:3000/api/v1/products";
+const API_URL = "http://192.168.43.108:3000/api/v1/products";
 
 const CATEGORIES = ['Men', 'Women', 'Kids', 'Oversized', 'Graphic'];
 
@@ -14,16 +19,14 @@ interface Product {
   name: string;
   price: number;
   category: string;
-  images: { url: string }[];
+  images: { url: string }[]; 
 }
 
 const Admin = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const drawerAnim = useState(new Animated.Value(-width))[0];
-  const router = useRouter();
+  const router = useNavigation();
 
   useEffect(() => {
     fetchProducts();
@@ -46,13 +49,20 @@ const Admin = () => {
   };
 
   const handleProductPress = async (productId: string) => {
-    await AsyncStorage.setItem("selectedProductId", productId);
-    router.push("/page/singleProd");
+    try {
+      // Store only the product ID in AsyncStorage
+      await AsyncStorage.setItem('selectedProductId', productId);
+      // Navigate to the "AdminSingleProd" page (product details page)
+      router.navigate("AdminSingleProd");
+    } catch (error) {
+      console.error('Error storing product ID: ', error);
+      alert('Error navigating to product details page');
+    }
   };
 
   const deleteProduct = async (productId: string) => {
     try {
-      const response = await fetch(`http://192.168.254.118:3000/api/v1/product/${productId}`, {
+      const response = await fetch(`http://192.168.43.108:3000/api/v1/product/${productId}`, {
         method: 'DELETE',
       });
 
@@ -67,16 +77,6 @@ const Admin = () => {
     }
   };
 
-  const toggleDrawer = () => {
-    const toValue = drawerOpen ? -width : 0;
-    setDrawerOpen(!drawerOpen);
-    Animated.timing(drawerAnim, {
-      toValue,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -85,9 +85,10 @@ const Admin = () => {
           <TouchableOpacity>
             <Image source={require("@/assets/icons/cart.png")} style={styles.icon} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={toggleDrawer}>
-            <Image source={require("@/assets/icons/menu.png")} style={styles.icon} />
-          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.openDrawer()}>
+          <Image source={require("@/assets/icons/menu.png")} style={styles.icon} />
+        </TouchableOpacity>
+
         </View>
       </View>
 
@@ -111,40 +112,6 @@ const Admin = () => {
           </>
         )}
       </ScrollView>
-
-      <Navbottombar />
-
-      {/* Drawer Overlay */}
-      <Animated.View style={[styles.drawerContainer, { transform: [{ translateX: drawerAnim }] }]}>
-        <View style={styles.drawerHeader}>
-          <Image source={require("@/assets/icons/user.png")} style={styles.drawerUserIcon} />
-          <Text style={styles.welcomeText}>Welcome, Admin !</Text>
-          <Text style={styles.emailText}>gelain@gmail.com</Text>
-        </View>
-
-        <View style={styles.drawerItemList}>
-          <TouchableOpacity onPress={() => router.push("/page/userList")}>
-            <View style={styles.drawerItem}>
-              <Image source={require("@/assets/icons/userlist.png")} style={styles.drawerIcon} />
-              <Text style={styles.drawerLabel}>View Users</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => router.push("/page/createProduct")}>
-            <View style={styles.drawerItem}>
-              <Image source={require("@/assets/icons/createproduct.png")} style={styles.drawerIcon} />
-              <Text style={styles.drawerLabel}>Create New Products</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => router.push("/page/orderInfo")}>
-            <View style={styles.drawerItem}>
-              <Image source={require("@/assets/icons/orderinfo.png")} style={styles.drawerIcon} />
-              <Text style={styles.drawerLabel}>Orders Informations</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
     </View>
   );
 };
@@ -181,6 +148,40 @@ const renderProductSection = (
     </ScrollView>
   </View>
 );
+
+// Drawer Content
+const CustomDrawerContent = (props: any) => (
+  <DrawerContentScrollView {...props}>
+    <View style={styles.drawerHeader}>
+      <Image source={require("@/assets/icons/user.png")} style={styles.drawerUserIcon} />
+      <Text style={styles.welcomeText}>Welcome, Admin !</Text>
+      <Text style={styles.emailText}>gelain@gmail.com</Text>
+    </View>
+    <DrawerItemList {...props} />
+  </DrawerContentScrollView>
+);
+
+const Drawer = createDrawerNavigator();
+
+export default function AdminDrawer() {
+  return (
+    <Drawer.Navigator
+      drawerContent={CustomDrawerContent}
+      initialRouteName="Admin"
+      screenOptions={{
+        headerShown: false,
+        drawerStyle: { backgroundColor: '#FFD676' },
+      }}
+    >
+      <Drawer.Screen name="Admin" component={Admin} />
+      <Drawer.Screen name="UserList" component={UserList} />
+      <Drawer.Screen name="CreateProduct" component={CreateProduct} />
+      <Drawer.Screen name="OrderInfo" component={OrderInfo} />
+      <Drawer.Screen name="AdminSingleProd" component={AdminSingleProd} options={{ drawerItemStyle: { display: 'none' } }} />
+  </Drawer.Navigator>
+
+  );
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
@@ -231,15 +232,6 @@ const styles = StyleSheet.create({
   deleteImage: { width: 18, height: 18, tintColor: 'red' },
 
   // Drawer Styles
-  drawerContainer: {
-    position: 'absolute',
-    width: '80%',
-    height: '100%',
-    backgroundColor: '#FFD676',
-    zIndex: 1000,
-    paddingTop: 60,
-    paddingHorizontal: 20,
-  },
   drawerHeader: {
     alignItems: 'center',
     borderBottomWidth: 1,
@@ -262,24 +254,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#fff',
   },
-  drawerItemList: {
-    gap: 20,
-  },
-  drawerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  drawerIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  drawerLabel: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '500',
-  },
 });
 
-export default Admin;

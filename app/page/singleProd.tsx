@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import axios from 'axios';
-import { useRoute, RouteProp } from '@react-navigation/native';
+// import { useRoute, RouteProp } from '@react-navigation/native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // import FastImage from 'react-native-fast-image';
 // import Navbottombar from "@/components/navigator/Navbottombar";
@@ -37,14 +37,14 @@ const SingleProd = () => {
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
 
-    const API_URL = `http://192.168.254.118:3000/api/v1/product/${id}`;
+    const API_URL = `http://192.168.43.108:3000/api/v1/product/${id}`;
 
     useEffect(() => {
         const fetchProduct = async () => {
             if (!id) return;
 
             try {
-                const response = await axios.get(`http://192.168.254.118:3000/api/v1/product/${id}`);
+                const response = await axios.get(`http://192.168.43.108:3000/api/v1/product/${id}`);
                 setProduct(response.data.product);
             } catch (error) {
                 console.error("Failed to fetch product:", error);
