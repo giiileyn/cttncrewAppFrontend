@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  ActivityIndicator,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Button,
+} from 'react-native';
 import axios from 'axios';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +19,9 @@ const ReviewPage = () => {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [reviewText, setReviewText] = useState('');
+  const [rating, setRating] = useState<number>(5);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -41,6 +54,27 @@ const ReviewPage = () => {
     fetchOrderDetails();
   }, [orderId]);
 
+  const handleToggleReview = (index: number) => {
+    if (activeIndex === index) {
+      setActiveIndex(null); // close
+    } else {
+      setActiveIndex(index); // open this one
+      setReviewText('');
+      setRating(5);
+    }
+  };
+
+  const handleSubmit = (productId: string) => {
+    console.log('Submitting review:', {
+      productId,
+      rating,
+      reviewText,
+    });
+    // You can integrate actual submission logic here
+    alert('Review submitted!');
+    setActiveIndex(null);
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -64,14 +98,35 @@ const ReviewPage = () => {
         const product = item.product;
         return (
           <View key={index} style={styles.card}>
-            {product?.image && (
-              <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
+            <TouchableOpacity onPress={() => handleToggleReview(index)}>
+              {product?.image && (
+                <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
+              )}
+              <Text style={styles.name}>{product?.name || 'No product name'}</Text>
+              <Text style={styles.detail}>Price: ${product?.price || 'N/A'}</Text>
+              <Text style={styles.detail}>Quantity: {item.quantity}</Text>
+              <Text style={styles.detail}>Color: {product?.color || 'Not specified'}</Text>
+            </TouchableOpacity>
+
+            {activeIndex === index && (
+              <View style={styles.reviewForm}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Write your review here..."
+                  value={reviewText}
+                  onChangeText={setReviewText}
+                  multiline
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Rating (1-5)"
+                  value={rating.toString()}
+                  keyboardType="numeric"
+                  onChangeText={(text) => setRating(Number(text))}
+                />
+                <Button title="Submit Review" onPress={() => handleSubmit(product._id)} color="#E91E63" />
+              </View>
             )}
-            <Text style={styles.name}>{product?.name || 'No product name'}</Text>
-            <Text style={styles.detail}>Price: ${product?.price || 'N/A'}</Text>
-            <Text style={styles.detail}>Quantity: {item.quantity}</Text>
-            <Text style={styles.detail}>Color: {product?.color || 'Not specified'}</Text>
-            {/* Future: Add input fields for rating and comment here */}
           </View>
         );
       })}
@@ -83,17 +138,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#FFF8E1', // light yellow background
+    backgroundColor: '#FFF8E1',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#E91E63', // pink
+    color: '#E91E63',
     marginBottom: 20,
     textAlign: 'center',
   },
   card: {
-    backgroundColor: '#FFEB3B', // yellow card
+    backgroundColor: '#FFEB3B',
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
@@ -119,6 +174,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 2,
     color: '#333',
+  },
+  reviewForm: {
+    marginTop: 10,
+    backgroundColor: '#FFF3E0',
+    padding: 10,
+    borderRadius: 10,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderColor: '#E91E63',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
   },
   center: {
     flex: 1,
