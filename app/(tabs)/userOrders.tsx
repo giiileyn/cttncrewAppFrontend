@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -15,6 +16,8 @@ const UserOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const router = useRouter();
+
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -105,12 +108,12 @@ const UserOrders = () => {
               <TouchableOpacity
                 style={styles.reviewButton}
                 onPress={() => {
-                  console.log('Write Review for Order:', item.orderId || item._id);
-                  // You can navigate to a review screen here if needed
+                    const orderId = item.orderId || item._id;
+                    router.push(`/page/reviews?orderId=${orderId}`);
                 }}
-              >
+                >
                 <Text style={styles.buttonText}>Write Review</Text>
-              </TouchableOpacity>
+                </TouchableOpacity>
             </View>
           )}
         />
