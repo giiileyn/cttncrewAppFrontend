@@ -32,9 +32,18 @@ const CheckoutScreen = () => {
   // Proceed with checkout logic here
   return (
     <View>
-      {/* Your checkout UI */}
-      <Text>Proceeding with checkout for User ID: {userId}</Text>
-    </View>
+    {/* Your checkout UI */}
+    <Text>Proceeding with checkout for User ID: {userId}</Text>
+    
+    {/* Simulate a checkout button */}
+    <Button title="Complete Checkout" onPress={handleCheckout} />
+    
+    {/* Show the review message after checkout */}
+    {showReviewMessage && (
+      <Text>Want to review the product you like?</Text>
+    )}
+  </View>
+
   );
 };
 
